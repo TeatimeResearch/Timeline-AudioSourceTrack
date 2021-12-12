@@ -13,7 +13,7 @@ namespace UnityEngine.Timeline {
 
 		[SerializeField, NotKeyable]
 		public bool loop = false;
-		[Range(0f, 2)]
+		[Range(0.001f, 3f)]
 		[SerializeField, NotKeyable]
 		public float pitch = 1f;
 
@@ -46,7 +46,7 @@ namespace UnityEngine.Timeline {
 
 		public override double duration { // this is used as the default duration of the clip when created
 			get {
-				return audioClip == null || audioClip.length == 0 ? 30 : audioClip.length - startTime;
+				return audioClip == null || audioClip.length == 0 ? 30 : (audioClip.length - startTime) * pitch;
 			}
 		}
 	}

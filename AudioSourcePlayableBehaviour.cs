@@ -118,7 +118,7 @@ namespace UnityEngine.Timeline {
 		private void SyncAudioToPlayable(Playable playable) {
 			if ( audioSource == null || audioSource.clip == null ) return;
 
-			audioSource.time = Mathf.Min((float)(startTime + (playable.GetTime() * audioSource.pitch)), audioSource.clip.length);
+			audioSource.time = Mathf.Min((float)((startTime + playable.GetTime()) * pitch), audioSource.clip.length);
 		}
 	}
 }
