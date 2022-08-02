@@ -7,7 +7,7 @@ namespace UnityEngine.Timeline {
 		public AudioSource trackAudioSource; // not visible in inspector
 		public AudioSource clipAudioSource;
 		public AudioSource audioSource {
-			get => clipAudioSource != null ? clipAudioSource : trackAudioSource;
+			get => clipAudioSource ? clipAudioSource : trackAudioSource;
 		}
 		public AudioClip audioClip;
 		public bool mute = false;
@@ -18,16 +18,21 @@ namespace UnityEngine.Timeline {
 		public bool loop = true;
 		public double startTime = 0.0;
 
+		public bool ignoreTimelineClipEnd = false;
+
 		private bool playedOnce = false;
 		private bool prepared = false;
 
+
 		public void PrepareAudio() {
 			if ( prepared ) return;
-			if ( (trackAudioSource == null && audioSource == null) || audioClip == null ) return;
+			if ( audioSource == null || (audioClip == null && audioSource.clip == null) ) return;
 
 			if ( audioSource.clip != audioClip ) StopAudio();
 
-			audioSource.clip = audioClip;
+			if ( audioClip != null ) {
+				audioSource.clip = audioClip;
+			}
 			audioSource.playOnAwake = false;
 			audioSource.loop = loop;
 			audioSource.volume = volume;
@@ -41,7 +46,7 @@ namespace UnityEngine.Timeline {
 
 		public override void PrepareFrame(Playable playable, FrameData info) {
 			if ( !Application.isPlaying ) return;
-			if ( audioSource == null || audioClip == null ) return;
+			if ( audioSource == null || (audioClip == null && audioSource.clip == null) ) return;
 
 			// audioSource.timeReference = Application.isPlaying ? VideoTimeReference.ExternalTime : VideoTimeReference.Freerun;
 			//
@@ -62,19 +67,21 @@ namespace UnityEngine.Timeline {
 
 		public override void OnBehaviourPause(Playable playable, FrameData info) {
 			if ( audioSource == null ) return;
-
 			if ( Application.isPlaying ) {
-				PauseAudio();
+				PauseAudio(ignoreTimelineClipEnd && Mathf.Abs((float)(playable.GetDuration() - playable.GetTime())) < 0.02f);
 			} else {
-				StopAudio();
+				StopAudio(ignoreTimelineClipEnd && Mathf.Abs((float)(playable.GetDuration() - playable.GetTime())) < 0.02f);
 			}
 		}
 
 		public override void ProcessFrame(Playable playable, FrameData info, object playerData) {
 			if ( !Application.isPlaying ) return;
 
-			if ( audioSource == null || audioSource.clip == null ) return;
-
+			if ( audioSource == null || (audioClip == null && audioSource.clip == null) ) return;
+			if ( Mathf.Abs(GetExpectedTime(playable) - audioSource.time) > .05f ) {
+				Debug.LogWarning("AudioSourceTrack drifting, resetting time.");
+				SyncAudioToPlayable(playable);
+			}
 			audioSource.volume = info.weight * volume;
 		}
 
@@ -87,7 +94,8 @@ namespace UnityEngine.Timeline {
 
 		public override void OnPlayableDestroy(Playable playable) {
 			if ( !Application.isPlaying ) return;
-			StopAudio();
+
+			StopAudio(ignoreTimelineClipEnd);
 		}
 
 		public void PlayAudio() {
@@ -95,30 +103,37 @@ namespace UnityEngine.Timeline {
 			if ( audioSource == null ) return;
 
 			PrepareAudio();
-
 			audioSource.Play();
 			playedOnce = true;
 		}
 
-		public void PauseAudio() {
+		public void PauseAudio(bool dontPause = false) {
 			if ( audioSource == null ) return;
 
-			audioSource.Pause();
+			if ( !dontPause ) {
+				audioSource.Pause();
+			}
 			prepared = false;
 		}
 
-		public void StopAudio() {
+		public void StopAudio(bool dontStop = false) {
 			if ( audioSource == null ) return;
 
 			playedOnce = false;
-			audioSource.Stop();
+			if ( !dontStop ) {
+				audioSource.Stop();
+			}
 			prepared = false;
+		}
+
+		float GetExpectedTime(Playable playable) {
+			return (float)((startTime + playable.GetTime()) * pitch);
 		}
 
 		private void SyncAudioToPlayable(Playable playable) {
 			if ( audioSource == null || audioSource.clip == null ) return;
 
-			audioSource.time = Mathf.Min((float)((startTime + playable.GetTime()) * pitch), audioSource.clip.length);
+			audioSource.time = Mathf.Min(GetExpectedTime(playable), audioSource.clip.length);
 		}
 	}
 }

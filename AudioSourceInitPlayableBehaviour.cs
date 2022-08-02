@@ -37,9 +37,9 @@ namespace UnityEngine.Timeline {
 
 				AudioSourcePlayableBehaviour audioSourcePlayableBehaviour = scriptPlayable.GetBehaviour();
 
-				if ( audioSourcePlayableBehaviour != null ) {
-					audioSourcePlayableBehaviour.trackAudioSource = (AudioSource)playerData;
-				}
+				// if ( audioSourcePlayableBehaviour != null ) {
+				// 	audioSourcePlayableBehaviour.trackAudioSource = (AudioSource)playerData;
+				// }
 				++inputPort;
 			}
 		}

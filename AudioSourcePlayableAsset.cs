@@ -9,23 +9,33 @@ namespace UnityEngine.Timeline {
 		public ExposedReference<AudioSource> clipAudioSource;
 
 		[SerializeField, NotKeyable]
+		[Tooltip("Optional: If missing, use clip set in audiosource")]
 		public AudioClip audioClip;
 
+		[Space]
+		
 		[SerializeField, NotKeyable]
 		public bool loop = false;
 		[Range(0.001f, 3f)]
 		[SerializeField, NotKeyable]
 		public float pitch = 1f;
-
 		[SerializeField, NotKeyable]
 		public double startTime = 0.0;
+		
 		[Space]
+		
 		[Range(0f, 1f)]
 		[SerializeField, NotKeyable]
 		public float volume = 1f;
 
 		[SerializeField, NotKeyable]
 		public bool mute = false;
+		
+		[Space]
+		
+		[SerializeField, NotKeyable]
+		[Tooltip("Clip playback is not stopped by playback clip")]
+		public bool ignoreTimelineClipEnd = false;
 
 		public override Playable CreatePlayable(PlayableGraph graph, GameObject go) {
 			ScriptPlayable<AudioSourcePlayableBehaviour> playable =
@@ -40,6 +50,7 @@ namespace UnityEngine.Timeline {
 			playableBehaviour.volume = volume;
 			playableBehaviour.pitch = pitch;
 			playableBehaviour.startTime = startTime;
+			playableBehaviour.ignoreTimelineClipEnd = ignoreTimelineClipEnd;
 
 			return playable;
 		}
